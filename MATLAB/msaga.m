@@ -24,7 +24,7 @@ classdef msaga
         end
         
         function [align_cell, pop, best_chromosomes, ...
-                best_values, avg_values] = run_ga(obj, input_path, isFasta)
+                best_values, avg_values, worst_values] = run_ga(obj, input_path, isFasta)
             % Read the input file sequences
             [seq_table] = prepare_input(input_path, isFasta);
             
@@ -41,6 +41,7 @@ classdef msaga
             best_chromosomes = {};
             best_values = [];
             avg_values = [];
+            worst_values = [];
             gener_count = 1;
             new_pop = {};
             
@@ -92,6 +93,7 @@ classdef msaga
                 % Get the best chromosome
                 avg_val = 0;
                 best_val = 0;
+                worst_val = Inf;
                 best_chromosome = false;
                 for i = 1:size(new_pop,1)
                     curr_val = msaga.eval_function(new_pop{i,1}.chromosome);
@@ -101,6 +103,9 @@ classdef msaga
                         best_val = curr_val;
                         best_chromosome = new_pop{i,1}.chromosome;
                     end
+                    if curr_val <= worst_val
+                        worst_val = curr_val;
+                    end
                 end
                 avg_val = avg_val / size(new_pop,1);
                 
@@ -108,6 +113,7 @@ classdef msaga
                 best_chromosomes{end+1,1} = best_chromosome;
                 best_values(end+1,1) = best_val;
                 avg_values(end+1,1) = avg_val;
+                worst_values(end+1,1) = worst_val;
                 
                 % Break the execution if there are no relevant changes
                 if obj.check_no_changes(best_values)
@@ -141,8 +147,8 @@ classdef msaga
                              
                 end_time = toc;
                  % Print time and stats
-                fprintf("[Generation %03d] Eval / Elapsed Time: %.4f / %.4f sec - Avg / Best Val: %.4f / %.4f \n", ...
-                    gener_count, total_eval_time, end_time, avg_val, best_val);
+                fprintf("[Gen %03d] Eval / Tot: %.2f / %.2f sec --  Worst / Avg / Best: %.1f / %.1f / %.1f \n", ...
+                    gener_count, total_eval_time, end_time, worst_val, avg_val, best_val);
                 exec_time = exec_time + end_time;
             end
             fprintf("[Whole optimization] Elapsed Time: %.4f seconds\n", exec_time);
