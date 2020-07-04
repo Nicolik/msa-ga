@@ -3,3 +3,6 @@ todo.txt
 
 # Images
 images/
+
+# ASV files
+*.asv
