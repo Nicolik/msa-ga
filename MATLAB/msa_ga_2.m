@@ -5,7 +5,8 @@ clear; clc; close all
 checkbio
 
 %% Paths
-path_out = './MATLAB/MSAga/data/out';
+path_out = './MATLAB/data/out';
+path_out_full = fullfile(pwd,path_out);
 [status, msg, msgID] = mkdir(path_out);
 filename_p53_multialign = fullfile(path_out,'p53_ga.aln');
 
@@ -14,10 +15,10 @@ filename_p53_multialign = fullfile(path_out,'p53_ga.aln');
 input_file = 'p53samples.txt';
 
 %% Multialign with GA
-chromosomes = 16;
-generations = 200;
-min_num_gen = 100;
-mutation_rate = 0.05;
+chromosomes = 8;
+generations = 30;
+min_num_gen = 20;
+mutation_rate = 0.2;
 crossover_prob = 0.5;
 isFasta = true;
 VERBOSE = false;
@@ -39,3 +40,4 @@ seqalignviewer(S);
 score = fitness_msa(S);
 fprintf("Fitness Score = %.2f\n", score);
 % Fitness Score = 7165.00
+% Fitness Score = 7179.50

@@ -5,7 +5,8 @@ clear; clc; close all
 checkbio
 
 %% Paths
-path_out = './MATLAB/MSAga/data/out';
+path_out = './MATLAB/data/out';
+path_out_full = fullfile(pwd,path_out);
 [status, msg, msgID] = mkdir(path_out);
 filename_p53_multialign = fullfile(path_out,'p53_library.aln');
 

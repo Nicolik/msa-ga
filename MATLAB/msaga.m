@@ -23,7 +23,8 @@ classdef msaga
             obj.VERBOSE = VERBOSE;
         end
         
-        function [align_cell, pop, best_chromosomes, best_values] = run_ga(obj, input_path, isFasta)
+        function [align_cell, pop, best_chromosomes, ...
+                best_values, avg_values] = run_ga(obj, input_path, isFasta)
             % Read the input file sequences
             [seq_table] = prepare_input(input_path, isFasta);
             
@@ -39,8 +40,11 @@ classdef msaga
             best_chromosome = false;
             best_chromosomes = {};
             best_values = [];
+            avg_values = [];
             gener_count = 1;
             new_pop = {};
+            
+            exec_time = 0;
             
             while gener_count < obj.generations
                 
@@ -52,6 +56,7 @@ classdef msaga
                     pop{i,1}.evaluation = msaga.eval_function(pop{i,1}.chromosome);
                     evaluations{end+1,1} = pop{i,1}.evaluation;
                 end
+                total_eval_time = toc;
                 
                 % Repeat for all chromosomes
                 for chromosome_counter = 1:obj.chromosomes
@@ -64,10 +69,10 @@ classdef msaga
                         disp(p2.chromosome);
                     end
                     % Get crossover probability
-                    crossover_prob = rand();
+                    crossover_prob_ = rand();
                 
                     % Apply a crossover operation on p1 and p2
-                    if crossover_prob < obj.crossover_prob
+                    if crossover_prob_ < obj.crossover_prob
                         child = msaga.apply_crossover(pop, p1, p2);
                         
                         % Apply a mutation on child
@@ -85,24 +90,24 @@ classdef msaga
                 end
                 
                 % Get the best chromosome
+                avg_val = 0;
                 best_val = 0;
                 best_chromosome = false;
                 for i = 1:size(new_pop,1)
                     curr_val = msaga.eval_function(new_pop{i,1}.chromosome);
                     new_pop{i,1}.evaluation = curr_val;
-                    
+                    avg_val = avg_val + curr_val;
                     if curr_val >= best_val
                         best_val = curr_val;
                         best_chromosome = new_pop{i,1}.chromosome;
                     end
                 end
-                
-                % Print stats
-                fprintf("Generation num %d: best val %.2f\n", gener_count, best_val);
+                avg_val = avg_val / size(new_pop,1);
                 
                 % Add best chromosome to list
                 best_chromosomes{end+1,1} = best_chromosome;
                 best_values(end+1,1) = best_val;
+                avg_values(end+1,1) = avg_val;
                 
                 % Break the execution if there are no relevant changes
                 if obj.check_no_changes(best_values)
@@ -135,8 +140,12 @@ classdef msaga
                 gener_count = gener_count + 1;
                              
                 end_time = toc;
-                fprintf("Elapsed time for generation %d is %.4f seconds\n", gener_count, end_time);
+                 % Print time and stats
+                fprintf("[Generation %03d] Eval / Elapsed Time: %.4f / %.4f sec - Avg / Best Val: %.4f / %.4f \n", ...
+                    gener_count, total_eval_time, end_time, avg_val, best_val);
+                exec_time = exec_time + end_time;
             end
+            fprintf("[Whole optimization] Elapsed Time: %.4f seconds\n", exec_time);
             align_cell = best_chromosomes{end,1};
         end
         
@@ -191,7 +200,7 @@ classdef msaga
                     gaps = get_interval_gaps(child, cell_i, cell_j);
                     start_gap = gaps{1,1};
                     end_gap = gaps{end,1};
-                    if start_gap ~= end_gap
+                    if start_gap ~= end_gap && obj.VERBOSE
                         fprintf("Start gap = %d\tEnd gap = %d\n", start_gap,end_gap);                   
                     end
                         
