@@ -7,7 +7,7 @@ checkbio
 %% Configuration
 chromosomes = 16;
 generations = 200;
-min_num_gen = 100;
+min_num_gen = 80;
 mutation_rate = 0.1;
 crossover_prob = 0.5;
 isFasta = false;
@@ -31,11 +31,14 @@ fprintf("Alignment Result:\n");
 disp(align_cell);
 
 %% Plot Trends
-plot(1:size(best_values,1), best_values,  'o', ...
-     1:size(best_values,1), avg_values,   '*', ...
-     1:size(best_values,1), worst_values, 'd', ...
+figure('units','normalized','outerposition',[0 0 1 1])
+plot(1:size(best_values,1), best_values,  '-o', ...
+     1:size(best_values,1), avg_values,   ':*', ...
+     1:size(best_values,1), worst_values, ':d', ...
      'LineWidth', 1.5)
 ylim([worst_value - 2 * std_avg, best_value + 2 * std_avg])
+title("Optimization Process Trends")
 xlabel("Generation")
 ylabel("Fitness")
 legend("Best Values", "Average Values", "Worst Values")
+saveas(gcf,'./MATLAB/images/trends_1.png')
