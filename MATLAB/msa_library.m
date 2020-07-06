@@ -12,14 +12,14 @@ filename_p53_multialign = fullfile(path_out,'p53_library.aln');
 
 %% Loading FASTA Input
 % This file should be in MATLAB path
-p53 = fastaread('p53samples.txt')
+p53 = fastaread('p53samples.txt');
 
 %% Multialign
-SeqsMultiAligned = multialign(p53)
+SeqsMultiAligned = multialign(p53);
 
 %% Show
 multialignwrite(filename_p53_multialign, SeqsMultiAligned)
-S = multialignread(filename_p53_multialign)
+S = multialignread(filename_p53_multialign);
 seqalignviewer(S);
 
 %% Fitness MSA

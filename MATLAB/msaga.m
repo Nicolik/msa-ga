@@ -23,8 +23,21 @@ classdef msaga
             obj.VERBOSE = VERBOSE;
         end
         
-        function [align_cell, pop, best_chromosomes, ...
-                best_values, avg_values, worst_values] = run_ga(obj, input_path, isFasta)
+        function [str] = toString(obj)
+            str = "";
+            str = str + sprintf("+=========================================+\n");
+            str = str + sprintf("+================ MSAGA ==================+\n");
+            str = str + sprintf("+=========================================+\n");
+            str = str + sprintf("+== Chromosomes           ==     %3d    ==+\n", obj.chromosomes);
+            str = str + sprintf("+== Generations (Min)     ==     %3d    ==+\n", obj.min_generations);
+            str = str + sprintf("+== Generations (Max)     ==     %3d    ==+\n",  obj.generations);
+            str = str + sprintf("+== Crossover Probability ==    %.2f    ==+\n", obj.crossover_prob);
+            str = str + sprintf("+== Mutation Rate         ==    %.2f    ==+\n", obj.mutation_rate);
+            str = str + sprintf("+=========================================+\n");
+        end    
+        
+        function [align_cell, pop, best_chromosomes, stats] = ...
+                run_ga(obj, input_path, isFasta)
             % Read the input file sequences
             [seq_table] = prepare_input(input_path, isFasta);
             
@@ -39,9 +52,10 @@ classdef msaga
             best_val = false;
             best_chromosome = false;
             best_chromosomes = {};
-            best_values = [];
-            avg_values = [];
-            worst_values = [];
+            stats.best_values = [];
+            stats.avg_values = [];
+            stats.worst_values = [];
+            stats.chromosomes = obj.chromosomes;
             gener_count = 1;
             new_pop = {};
             
@@ -61,28 +75,30 @@ classdef msaga
                 
                 % Repeat for all chromosomes
                 for chromosome_counter = 1:obj.chromosomes
-                    % Select two parents
-                    [p1, p2] = msaga.select_parents(pop, evaluations);
-                    if obj.VERBOSE
-                        fprintf("\nParent 1:\n");
-                        disp(p1.chromosome);
-                        fprintf("\nParent 2:\n");
-                        disp(p2.chromosome);
-                    end
                     % Get crossover probability
                     crossover_prob_ = rand();
                 
-                    % Apply a crossover operation on p1 and p2
+                    % Crossover check
                     if crossover_prob_ < obj.crossover_prob
+                        % Select two parents
+                        [p1, p2] = msaga.select_parents(pop, evaluations, obj.VERBOSE);
+                        
+                        % Apply a crossover operation on p1 and p2
                         child = msaga.apply_crossover(pop, p1, p2);
                         
                         % Apply a mutation on child
                         child.chromosome = obj.apply_mutation(child.chromosome);
+                       
+                        % Add Gaps (all chromosomes must be of same length)
+                        child.chromosome = add_gaps(child.chromosome);
+                        
+                        % Remove columns composed of only gaps
+                        child.chromosome = remove_useless_gaps(child.chromosome);
                         
                         % Add the child to the new population
-                        child.chromosome = add_gaps(child.chromosome);
-                        child.chromosome = remove_useless_gaps(child.chromosome);
                         new_pop{end+1,1} = child;
+                        
+                        % Display the child
                         if obj.VERBOSE
                             fprintf("\nChild:\n");
                             disp(child.chromosome);
@@ -91,32 +107,19 @@ classdef msaga
                 end
                 
                 % Get the best chromosome
-                avg_val = 0;
-                best_val = 0;
-                worst_val = Inf;
-                best_chromosome = false;
-                for i = 1:size(new_pop,1)
-                    curr_val = msaga.eval_function(new_pop{i,1}.chromosome);
-                    new_pop{i,1}.evaluation = curr_val;
-                    avg_val = avg_val + curr_val;
-                    if curr_val >= best_val
-                        best_val = curr_val;
-                        best_chromosome = new_pop{i,1}.chromosome;
-                    end
-                    if curr_val <= worst_val
-                        worst_val = curr_val;
-                    end
-                end
-                avg_val = avg_val / size(new_pop,1);
-                
+                [best_chromosome, avg_val, best_val, worst_val] = ...
+                    msaga.get_best_chromosome(new_pop);
+                                
                 % Add best chromosome to list
                 best_chromosomes{end+1,1} = best_chromosome;
-                best_values(end+1,1) = best_val;
-                avg_values(end+1,1) = avg_val;
-                worst_values(end+1,1) = worst_val;
+                
+                % Stats
+                stats.best_values(end+1,1) = best_val;
+                stats.avg_values(end+1,1) = avg_val;
+                stats.worst_values(end+1,1) = worst_val;
                 
                 % Break the execution if there are no relevant changes
-                if obj.check_no_changes(best_values)
+                if obj.check_no_changes(stats.best_values)
                     fprintf("Stop the optimization. No progresses!\n");
                     break;
                 end
@@ -124,35 +127,22 @@ classdef msaga
                 % Update population
                 % Add to the population the new generated chromosomes and
                 % remove the same number of the worst chromosomes from
-                % the original population
-                pop_evaluations = [];
-                for i = 1:size(pop,1)
-                    pop_evaluations = [pop_evaluations, pop{i,1}.evaluation];
-                end
-                [sorted_pop, pop_indices] = sort(pop_evaluations, 'descend');
-                new_pop_evaluations = []; 
-                for i = 1:size(new_pop,1)
-                    new_pop_evaluations = [new_pop_evaluations, new_pop{i,1}.evaluation];
-                end
-                [sorted_new_pop, new_pop_indices] = sort(new_pop_evaluations, 'descend');
+                % the original population                
+                [pop] = msaga.update_population(pop, new_pop);
                 
-                for i = 1:size(new_pop,1)
-                    index_pop = pop_indices( numel(pop_indices)-numel(new_pop_indices)+i );
-                    index_new_pop = new_pop_indices (i);
-                    pop{index_pop,1} = new_pop{index_new_pop,1}; 
-                end
-                
-                new_pop = {};
-                gener_count = gener_count + 1;
-                             
+                new_pop = {};                            
                 end_time = toc;
                  % Print time and stats
                 fprintf("[Gen %03d] Eval / Tot: %.2f / %.2f sec --  Worst / Avg / Best: %.1f / %.1f / %.1f \n", ...
                     gener_count, total_eval_time, end_time, worst_val, avg_val, best_val);
                 exec_time = exec_time + end_time;
+                gener_count = gener_count + 1;
             end
             fprintf("[Whole optimization] Elapsed Time: %.4f seconds\n", exec_time);
-            align_cell = best_chromosomes{end,1};
+            [stats.best_value, stats.best_gen] = max(stats.best_values);
+            fprintf("Best Result -- Gen %03d -- Val %.1f\n", ...
+                stats.best_gen, stats.best_value);
+            align_cell = best_chromosomes{stats.best_gen,1};
         end
         
         function [change] = check_no_changes(obj, best_values)
@@ -279,7 +269,7 @@ classdef msaga
                 end
             end
         end
-        
+               
     end
     
     methods(Static)
@@ -297,7 +287,7 @@ classdef msaga
             end
         end
         
-        function [p1, p2] = select_parents(pop, evaluations)
+        function [p1, p2] = select_parents(pop, evaluations, VERBOSE)
             % Normalize the fitness
             pop_sum = sum(cell2mat(evaluations));
             evaluations_aux = {};
@@ -319,6 +309,14 @@ classdef msaga
             p1 = p1{1};
             p2 = randsample(pool,1);
             p2 = p2{1};
+            
+            % Show chromosomes
+            if VERBOSE
+                fprintf("\nParent 1:\n");
+                disp(p1.chromosome);
+                fprintf("\nParent 2:\n");
+                disp(p2.chromosome);
+            end
         end
         
         function [child_struct] = apply_crossover(pop, p1, p2)
@@ -337,6 +335,46 @@ classdef msaga
             child_struct.chromosome = child;
             child_struct.evaluation = 0;
         end
+        
+        function [best_chromosome, avg_val, best_val, worst_val] = get_best_chromosome(new_pop)
+                avg_val = 0;
+                best_val = 0;
+                worst_val = Inf;
+                best_chromosome = false;
+                for i = 1:size(new_pop,1)
+                    curr_val = msaga.eval_function(new_pop{i,1}.chromosome);
+                    new_pop{i,1}.evaluation = curr_val;
+                    avg_val = avg_val + curr_val;
+                    if curr_val >= best_val
+                        best_val = curr_val;
+                        best_chromosome = new_pop{i,1}.chromosome;
+                    end
+                    if curr_val <= worst_val
+                        worst_val = curr_val;
+                    end
+                end
+                avg_val = avg_val / size(new_pop,1);
+        end
+        
+        function [pop] = update_population(pop, new_pop)
+                pop_evaluations = [];
+                for i = 1:size(pop,1)
+                    pop_evaluations = [pop_evaluations, pop{i,1}.evaluation];
+                end
+                [~, pop_indices] = sort(pop_evaluations, 'descend');
+                new_pop_evaluations = []; 
+                for i = 1:size(new_pop,1)
+                    new_pop_evaluations = [new_pop_evaluations, new_pop{i,1}.evaluation];
+                end
+                [~, new_pop_indices] = sort(new_pop_evaluations, 'descend');
+                
+                for i = 1:size(new_pop,1)
+                    index_pop = pop_indices( numel(pop_indices)-numel(new_pop_indices)+i );
+                    index_new_pop = new_pop_indices (i);
+                    pop{index_pop,1} = new_pop{index_new_pop,1}; 
+                end 
+        end
+        
     end    
 end
 
