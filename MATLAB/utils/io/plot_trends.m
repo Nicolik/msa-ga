@@ -23,7 +23,7 @@ legend("Best Values", "Average Values", "Worst Values")
 text(xtext,ytext,description,'FontName','FixedWidth')
 txt_best = strcat({'\downarrow '}, sprintf('F: %.2f @ G: %03d',...
                                     best_value, stats.best_gen));
-xtextb = stats.best_gen + (xmax-xmin) * 0.01;
+xtextb = stats.best_gen - (xmax-xmin) * 0.001;
 ytextb = stats.best_value + (ymax-ymin) * 0.02; 
 text(xtextb,ytextb,txt_best)
 saveas(gcf,sprintf('./MATLAB/images/trends_%d_C%d.png',id,stats.chromosomes))

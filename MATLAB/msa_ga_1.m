@@ -5,7 +5,7 @@ clear; clc; close all
 checkbio
 
 %% Configuration
-chromosomes = 32;
+chromosomes = 256;
 generations = 200;
 min_num_gen = 80;
 mutation_rate = 0.1;
