@@ -6,3 +6,6 @@ images/
 
 # ASV files
 *.asv
+
+# MAT files
+*.mat
