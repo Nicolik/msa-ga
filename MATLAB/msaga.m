@@ -84,7 +84,7 @@ classdef msaga
                         [p1, p2] = msaga.select_parents(pop, evaluations, obj.VERBOSE);
                         
                         % Apply a crossover operation on p1 and p2
-                        child = msaga.apply_crossover(pop, p1, p2);
+                        child = msaga.apply_crossover(p1, p2);
                         
                         % Apply a mutation on child
                         child.chromosome = obj.apply_mutation(child.chromosome);
@@ -319,8 +319,8 @@ classdef msaga
             end
         end
         
-        function [child_struct] = apply_crossover(pop, p1, p2)
-            n = numel(pop{1,1}.chromosome);
+        function [child_struct] = apply_crossover(p1, p2)
+            n = numel(p1.chromosome);
             
             % Apply horizontal crossover
             rand_horizontal = randi([1,n-1]);
