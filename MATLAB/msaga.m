@@ -64,9 +64,8 @@ classdef msaga
             while gener_count < obj.generations
                 
                 tic
-                
                 % Evaluate all chromosomes
-                evaluations = {};
+                evaluations = {}; 
                 for i = 1:size(pop,1)
                     pop{i,1}.evaluation = msaga.eval_function(pop{i,1}.chromosome);
                     evaluations{end+1,1} = pop{i,1}.evaluation;

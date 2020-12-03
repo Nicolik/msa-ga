@@ -18,8 +18,8 @@ input_file = 'p53samples.txt';
 chromosomes = 16;
 generations = 200;
 min_num_gen = 80;
-mutation_rate = 0.2;
-crossover_prob = 0.5;
+mutation_rate = 0.1;
+crossover_prob = 0.8;
 isFasta = true;
 VERBOSE = false;
 

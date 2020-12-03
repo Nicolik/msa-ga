@@ -5,17 +5,17 @@ clear; clc; close all
 checkbio
 
 %% Configuration
-chromosomes = 256;
+chromosomes = 32;
 generations = 200;
 min_num_gen = 80;
 mutation_rate = 0.1;
-crossover_prob = 0.5;
+crossover_prob = 0.75;
 isFasta = false;
 VERBOSE = false;
 
 %% Creating object
 input_file = "data_ex_1.txt";
-gen_alg = msaga(chromosomes, generations, min_num_gen, ....
+gen_alg = msaga(chromosomes, generations, min_num_gen, ...
                 mutation_rate, crossover_prob, VERBOSE);
 fprintf(gen_alg.toString());
 
